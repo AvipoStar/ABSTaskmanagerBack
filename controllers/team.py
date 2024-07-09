@@ -14,13 +14,6 @@ def create_team(team_name: str):
 
     cursor = db.cursor()
 
-    # Проверка на уникальность имени команды
-    cursor.execute("SELECT id FROM team WHERE name = %s", (team_name,))
-    result = cursor.fetchone()
-    if result:
-        db.close()
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Команда с таким именем уже существует")
-
     # Вставка новой команды
     cursor.execute("INSERT INTO team (name) VALUES (%s)", (team_name,))
     db.commit()
@@ -118,7 +111,7 @@ def delete_team(team_id: int):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Команда не найдена")
 
         # Удаляем привязки работников к команде
-        cursor.execute("DELETE FROM worker2team WHERE team_id = %s", (team_id,))
+        cursor.execute("DELETE worker2team WHERE team_id = %s", (team_id,))
 
         # Удаляем команду
         cursor.execute("DELETE FROM team WHERE id = %s", (team_id,))

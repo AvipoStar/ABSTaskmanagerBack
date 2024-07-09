@@ -16,7 +16,7 @@ class Task(BaseModel):
     serial_number: int
     creation_date_time: datetime
     priority_id: int
-    dedline: Optional[datetime]
+    deadline: Optional[datetime]
     is_done: bool
     description: Optional[str]
     creator_id: int
@@ -45,6 +45,7 @@ class Project(BaseModel):
     id: Optional[int]
     name: str
     direction_id: int
+    team_id: int
 
 
 class ProjectDirection(BaseModel):
