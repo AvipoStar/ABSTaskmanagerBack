@@ -6,7 +6,7 @@ from models.models import Project
 app = FastAPI()
 
 
-def get_project_directions():
+def get_project_directions_in_team(team_id: int):
     db = mysql.connector.connect(
         host="localhost",
         user="root",
@@ -16,7 +16,11 @@ def get_project_directions():
     cursor = db.cursor(dictionary=True)
 
     # Запрос на получение всех направлений проектов в команде
-    cursor.execute("SELECT *  FROM project_directions")
+    cursor.execute(
+        "select pd.id, pd.name from project_direction pd "
+        "join project p on p.direction_id = pd.id "
+        "join team t on p.team_id = t.id "
+        f"where t.id = {team_id}")
     project_directions = cursor.fetchall()
 
     db.close()
@@ -103,10 +107,9 @@ def get_projects_in_team(team_id: int):
         SELECT p.id, p.name, p.direction_id, p.team_id 
         FROM project p 
         JOIN team t ON t.id = p.team_id 
-        WHERE wt.worker_id = %s
+        WHERE t.id = %s
     """, (team_id,))
     projects = cursor.fetchall()
-
     db.close()
 
     return {"projects": projects}
