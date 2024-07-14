@@ -33,7 +33,7 @@ def changeFavoriteProject(user_id: int, project_id: int):
     return result
 
 
-@router.post('/get_projects_in_team', tags=["Project"])
+@router.get('/get_projects_in_team/{team_id}', tags=["Project"])
 def getProjectsInTeam(team_id: int):
     result = get_projects_in_team(team_id)
     print(f'projects {result}')

@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from controllers.team import create_team, get_teams, attach_worker_to_team, delete_team
-from controllers.worker import create_worker, get_workers_in_team
+from controllers.worker import create_worker, get_workers_in_team, get_roles_in_team
 from models.models import Team, AttachToTeam, Worker
 
 router = APIRouter()
@@ -20,3 +20,8 @@ def get_team_route(team_id: int):
 @router.delete("/delete_team/{team_id}", tags=["Workers"])
 def delete_team_route(team_id: int):
     return delete_team(team_id)
+
+
+@router.post("/get_roles_in_team", tags=["Workers"], description="Получение ролей пользователя в команде")
+def getRolesInTeam(worker_dat: Worker):
+    return get_roles_in_team(worker_dat)

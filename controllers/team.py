@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 import mysql.connector
 
+from models.models import Role, AttachWorkerToTeamToRoles
+
 app = FastAPI()
 
 
@@ -46,7 +48,7 @@ def get_teams(user_id: int):
     return {"teams": teams}
 
 
-def attach_worker_to_team(team_id: int, worker_id: int):
+def attach_worker_to_team(data: AttachWorkerToTeamToRoles):
     db = mysql.connector.connect(
         host="localhost",
         user="root",
@@ -58,32 +60,29 @@ def attach_worker_to_team(team_id: int, worker_id: int):
 
     try:
         # Проверяем, существует ли такая команда
-        cursor.execute("SELECT id FROM team WHERE id = %s", (team_id,))
+        cursor.execute("SELECT id FROM team WHERE id = %s", (data.team_id,))
         team_exists = cursor.fetchone()
         if not team_exists:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Команда не найдена")
 
         # Проверяем, существует ли такой работник
-        cursor.execute("SELECT id FROM worker WHERE id = %s", (worker_id,))
+        cursor.execute("SELECT id FROM worker WHERE id = %s", (data.worker_id,))
         worker_exists = cursor.fetchone()
         if not worker_exists:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Работник не найден")
 
         # Проверяем, не привязан ли уже работник к этой команде
-        cursor.execute("SELECT id FROM worker2team WHERE team_id = %s AND worker_id = %s", (team_id, worker_id))
+        cursor.execute("SELECT id FROM worker2team WHERE team_id = %s AND worker_id = %s",
+                       (data.team_id, data.worker_id))
         already_attached = cursor.fetchone()
         if already_attached:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Работник уже привязан к этой команде")
 
         # Добавляем запись о привязке работника к команде
-        cursor.execute("INSERT INTO worker2team (team_id, worker_id) VALUES (%s, %s)", (team_id, worker_id))
+        cursor.execute("INSERT INTO worker2team (team_id, worker_id) VALUES (%s, %s)", (data.team_id, data.worker_id))
         db.commit()
 
-        # Получаем обновленные данные о команде
-        cursor.execute("SELECT id, name FROM team WHERE id = %s", (team_id,))
-        team_data = cursor.fetchone()
-
-        return team_data
+        return {"Seccess": True}
 
     except mysql.connector.Error as e:
         db.rollback()
@@ -126,3 +125,24 @@ def delete_team(team_id: int):
     finally:
         cursor.close()
         db.close()
+
+
+def create_role(role: Role):
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="abs"
+    )
+
+    cursor = db.cursor()
+
+    # Вставка новой команды
+    cursor.execute("INSERT INTO role (name) VALUES (%s)", (role.name,))
+    db.commit()
+    role_id = cursor.lastrowid
+    cursor.execute("INSERT INTO role2team (role_id, team_id) VALUES (%s, %s)", (role_id, role.team_id))
+    db.commit()
+    db.close()
+
+    return {"role_id": role_id}

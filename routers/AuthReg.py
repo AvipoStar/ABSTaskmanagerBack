@@ -8,6 +8,5 @@ router = APIRouter()
 
 @router.post('/login', tags=["Auth"])
 def auth(loginData: LoginClass):
-    user_id = loginFunc(loginData.login, loginData.password)
-    return user_id
-
+    worker = loginFunc(loginData.login, loginData.password)
+    return worker

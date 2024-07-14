@@ -90,3 +90,25 @@ def delete_worker(worker_id: int):
     finally:
         cursor.close()
         db.close()
+
+
+def get_roles_in_team(worker_id: int, team_id: int):
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="abs"
+    )
+    cursor = db.cursor(dictionary=True)
+
+    # Запрос на получение всех компаний, к которым привязан пользователь
+    cursor.execute("""
+            SELECT w.id, w.fio, w.mail
+            FROM worker2team wt
+            WHERE wt.worker_id = %s AND wt.user_id = %s
+        """, (team_id, worker_id))
+    workers = cursor.fetchall()
+
+    db.close()
+
+    return {"workers": workers}

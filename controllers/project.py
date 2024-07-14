@@ -56,8 +56,8 @@ def create_project(project: Project):
     )
 
     cursor = db.cursor()
-    cursor.execute("INSERT INTO project (name, direction_id, team_id) VALUES (%s, %s)",
-                   (project.name, project.direction_id, project.team_id))
+    cursor.execute("INSERT INTO project (name, direction_id, team_id, isActive) VALUES (%s, %s, %s)",
+                   (project.name, project.direction_id, project.team_id, True))
     db.commit()
     team_id = cursor.lastrowid
     db.close()
@@ -104,7 +104,7 @@ def get_projects_in_team(team_id: int):
 
     # Запрос на получение всех проектов в команде
     cursor.execute("""
-        SELECT p.id, p.name, p.direction_id, p.team_id 
+        SELECT p.id, p.name, p.direction_id, p.team_id, isActive  
         FROM project p 
         JOIN team t ON t.id = p.team_id 
         WHERE t.id = %s

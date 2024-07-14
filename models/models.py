@@ -46,6 +46,7 @@ class Project(BaseModel):
     name: str
     direction_id: int
     team_id: int
+    isActive: bool
 
 
 class ProjectDirection(BaseModel):
@@ -81,3 +82,15 @@ class Team(BaseModel):
 class AttachToTeam(BaseModel):
     user_id: int
     team_id: int
+
+
+class Role(BaseModel):
+    id: Optional[int]
+    name: str
+    team_id: int
+
+
+class AttachWorkerToTeamToRoles(BaseModel):
+    worker_id: int
+    team_id: int
+    role_ids: list[int]
