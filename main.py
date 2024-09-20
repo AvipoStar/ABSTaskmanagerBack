@@ -5,6 +5,8 @@ from routers.AuthReg import router as authReg_router
 from routers.team import router as team_router
 from routers.project import router as project_router
 from routers.worker import router as worker_router
+from routers.taskmanager import router as taskmanager_router
+from routers.DatabaseManagement import router as dabase_router
 
 app = FastAPI()
 
@@ -33,4 +35,13 @@ app.include_router(
 app.include_router(
     router=worker_router,
     prefix='/worker'
+)
+app.include_router(
+    router=taskmanager_router,
+    prefix='/taskmanager'
+)
+
+app.include_router(
+    router=dabase_router,
+    prefix='/database'
 )

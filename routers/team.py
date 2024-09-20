@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 
-from controllers.team import create_team, get_teams, attach_worker_to_team, delete_team, create_role
-from models.models import Team, AttachToTeam, Role
+from controllers.team import create_team, attach_worker_to_team, delete_team, create_role, create_project_direction, \
+    create_project, get_roles
+from models.models import Team, AttachToTeam, Role, ProjectDirection, Project
 
 router = APIRouter()
 
@@ -9,11 +10,6 @@ router = APIRouter()
 @router.post("/create_team", tags=["Teams"], description="Создание новой команды")
 def create_team_route(team_data: Team):
     return create_team(team_data.name)
-
-
-@router.get("/get_teams/{user_id}", tags=["Teams"], description="Получение команд пользователя")
-def get_team_route(user_id: int):
-    return get_teams(user_id)
 
 
 @router.post("/attach_worker_to_team", tags=["Teams"], description="Получение команд пользователя")
@@ -29,3 +25,21 @@ def delete_team_route(team_id: int):
 @router.post("/create_role", tags=["Teams"])
 def createRole(role_data: Role):
     return create_role(role_data)
+
+
+@router.post('/create_project_direction', tags=["Teams"])
+def createProjectDirection(project_direction: ProjectDirection):
+    direction_id = create_project_direction(project_direction)
+    return direction_id
+
+
+@router.post('/create_project', tags=["Teams"], response_model=int)
+def createProject(project: Project):
+    user_id = create_project(project)
+    return user_id
+
+
+@router.get('/get_roles/{team_id}', tags=["Teams"])
+def getRoles(team_id: int):
+    roles = get_roles(team_id)
+    return roles

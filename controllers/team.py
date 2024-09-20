@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 import mysql.connector
 
-from models.models import Role, AttachWorkerToTeamToRoles
+from models.models import Role, AttachWorkerToTeamToRoles, ProjectDirection, Project
 
 app = FastAPI()
 
@@ -23,29 +23,6 @@ def create_team(team_name: str):
     db.close()
 
     return {"team_id": team_id}
-
-
-def get_teams(user_id: int):
-    db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="abs"
-    )
-    cursor = db.cursor(dictionary=True)
-
-    # Запрос на получение всех компаний, к которым привязан пользователь
-    cursor.execute("""
-        SELECT t.id, t.name
-        FROM team t
-        JOIN worker2team wt ON t.id = wt.team_id
-        WHERE wt.worker_id = %s
-    """, (user_id,))
-    teams = cursor.fetchall()
-
-    db.close()
-
-    return {"teams": teams}
 
 
 def attach_worker_to_team(data: AttachWorkerToTeamToRoles):
@@ -146,3 +123,60 @@ def create_role(role: Role):
     db.close()
 
     return {"role_id": role_id}
+
+
+def create_project_direction(projectDirection: ProjectDirection):
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="abs"
+    )
+    cursor = db.cursor(dictionary=True)
+
+    cursor.execute("INSERT INTO project_direction (name, team_id) VALUES (%s, %s)",
+                   (projectDirection.name, projectDirection.team_id))
+    db.commit()
+    project_direction_id = cursor.lastrowid
+
+    db.close()
+
+    return {"project_direction_id": project_direction_id}
+
+
+def create_project(project: Project):
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="abs"
+    )
+
+    cursor = db.cursor()
+    cursor.execute("INSERT INTO project (name, direction_id, team_id, isActive) VALUES (%s, %s, %s)",
+                   (project.name, project.direction_id, project.team_id, True))
+    db.commit()
+    team_id = cursor.lastrowid
+    db.close()
+
+    if team_id:
+        return {"team_id": team_id}
+    else:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Не удалось создать проект")
+
+
+def get_roles(team_id: int):
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="abs"
+    )
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT r.id, r.name FROM abs.role r "
+                   "JOIN abs.role2team rt on r.id = rt.role_id "
+                   "WHERE rt.team_id = %s;", (team_id,))
+    roles = cursor.fetchall()
+    db.close()
+
+    return {"roles": roles}

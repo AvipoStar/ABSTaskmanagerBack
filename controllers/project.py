@@ -1,96 +1,7 @@
 import mysql.connector
-from fastapi import FastAPI, HTTPException, status
-
-from models.models import Project
+from fastapi import FastAPI
 
 app = FastAPI()
-
-
-def get_project_directions_in_team(team_id: int):
-    db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="abs"
-    )
-    cursor = db.cursor(dictionary=True)
-
-    # Запрос на получение всех направлений проектов в команде
-    cursor.execute(
-        "select pd.id, pd.name from project_direction pd "
-        "join project p on p.direction_id = pd.id "
-        "join team t on p.team_id = t.id "
-        f"where t.id = {team_id}")
-    project_directions = cursor.fetchall()
-
-    db.close()
-
-    return {"project_directions": project_directions}
-
-
-def create_project_direction(name_direction: str):
-    db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="abs"
-    )
-    cursor = db.cursor(dictionary=True)
-
-    # Запрос на получение всех направлений проектов в команде
-    cursor.execute("INSERT INTO project_directions (name) VALUES (%s)", (name_direction))
-    db.commit()
-    project_direction_id = cursor.lastrowid
-
-    db.close()
-
-    return {"project_direction_id": project_direction_id}
-
-
-def create_project(project: Project):
-    db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="abs"
-    )
-
-    cursor = db.cursor()
-    cursor.execute("INSERT INTO project (name, direction_id, team_id, isActive) VALUES (%s, %s, %s)",
-                   (project.name, project.direction_id, project.team_id, True))
-    db.commit()
-    team_id = cursor.lastrowid
-    db.close()
-
-    if team_id:
-        return {"team_id": team_id}
-    else:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Не удалось создать проект")
-
-
-def change_favorite_project(user_id: int, project_id: int):
-    try:
-        db = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="",
-            database="abs"
-        )
-        cursor = db.cursor()
-        cursor.execute("SELECT * FROM favorite_project WHERE worker_id = %s AND project_id = %s", (user_id, project_id))
-        favorite = cursor.fetchone()
-        if favorite:
-            cursor.execute("DELETE FROM favorite_project WHERE worker_id = %s AND project_id = %s",
-                           (user_id, project_id))
-        else:
-            cursor.execute("INSERT INTO favorite_project (worker_id, project_id) VALUES (%s, %s)",
-                           (user_id, project_id))
-        db.commit()
-        db.close()
-        return {"success": True}
-    except mysql.connector.Error as error:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail="Не удалось поменять статус проекта")
 
 
 def get_projects_in_team(team_id: int):
@@ -104,7 +15,7 @@ def get_projects_in_team(team_id: int):
 
     # Запрос на получение всех проектов в команде
     cursor.execute("""
-        SELECT p.id, p.name, p.direction_id, p.team_id, isActive  
+        SELECT p.id, p.name, p.direction_id, p.team_id, p.isActive 
         FROM project p 
         JOIN team t ON t.id = p.team_id 
         WHERE t.id = %s
@@ -112,4 +23,61 @@ def get_projects_in_team(team_id: int):
     projects = cursor.fetchall()
     db.close()
 
+    print(f'\n projects: {projects}\n')
+
     return {"projects": projects}
+
+
+def get_project_info(project_id: int):
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="abs"
+    )
+    cursor = db.cursor(dictionary=True)
+
+    # Получение информации о проекте
+    cursor.execute("""
+        SELECT id, name, direction_id, team_id, isActive
+        FROM project
+        WHERE id = %s;
+    """, (project_id,))
+    project = cursor.fetchone()
+
+    if not project:
+        db.close()
+        return {"error": "Project not found"}
+
+    # Получение информации о колонках проекта
+    cursor.execute("""
+        SELECT id, name, project_id, serial_number
+        FROM `column`
+        WHERE project_id = %s
+        ORDER BY serial_number;
+    """, (project_id,))
+    columns = cursor.fetchall()
+
+    # Получение информации о задачах
+    column_ids = [col['id'] for col in columns]
+    if column_ids:
+        cursor.execute("""
+            SELECT id, name, description, column_id, serial_number, creationd_date_time, deadline, priority_id, is_done, creator_id, parent_task_id
+            FROM task
+            WHERE column_id IN (%s)
+            ORDER BY column_id, serial_number;
+        """ % ','.join(str(id) for id in column_ids))
+        tasks = cursor.fetchall()
+    else:
+        tasks = []
+
+    # Организация задач по колонкам
+    for column in columns:
+        column['tasks'] = [task for task in tasks if task['column_id'] == column['id']]
+
+    db.close()
+
+    return {
+        "project_info": project,
+        "columns": columns
+    }

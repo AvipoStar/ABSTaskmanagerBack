@@ -11,14 +11,14 @@ class LoginClass(BaseModel):
 
 class Task(BaseModel):
     id: Optional[int]
+    creation_date_time: Optional[datetime]
+    priority_id: Optional[int]
+    deadline: Optional[datetime]
+    description: Optional[str]
+    serial_number: Optional[int]
+    is_done: Optional[bool]
     name: str
     column_id: int
-    serial_number: int
-    creation_date_time: datetime
-    priority_id: int
-    deadline: Optional[datetime]
-    is_done: bool
-    description: Optional[str]
     creator_id: int
 
 
@@ -36,9 +36,9 @@ class Priority(BaseModel):
 
 class Column(BaseModel):
     id: Optional[int]
+    serial_number: Optional[int]
     name: str
     project_id: int
-    serial_number: int
 
 
 class Project(BaseModel):
@@ -50,8 +50,9 @@ class Project(BaseModel):
 
 
 class ProjectDirection(BaseModel):
-    id: int
+    id: Optional[int]
     name: str
+    team_id: int
 
 
 class Worker(BaseModel):
@@ -94,3 +95,13 @@ class AttachWorkerToTeamToRoles(BaseModel):
     worker_id: int
     team_id: int
     role_ids: list[int]
+
+
+class Token(BaseModel):
+    token: str
+
+
+class AddRoles(BaseModel):
+    user_id: int
+    team_id: int
+    role_ids: List[int]
